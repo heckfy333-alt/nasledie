@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import GlobalNavigation from "./components/GlobalNavigation";
 import Providers from "./providers";
 
 export const metadata: Metadata = {
@@ -39,7 +40,10 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <body>
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <GlobalNavigation />
+        </Providers>
       </body>
     </html>
   );

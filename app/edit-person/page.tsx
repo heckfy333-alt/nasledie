@@ -8,15 +8,16 @@ export default function EditPersonPage() {
   const [lastName, setLastName] = useState("");
   const [biography, setBiography] = useState("");
   const [photo, setPhoto] = useState("");
+  const [message, setMessage] = useState("");
 
   async function updatePerson() {
-    await fetch("/api/people/" + id, {
-      method: "PUT",
+    setMessage("");
 
+    const response = await fetch(`/api/people/${id}`, {
+      method: "PUT",
       headers: {
         "Content-Type": "application/json",
       },
-
       body: JSON.stringify({
         firstName,
         lastName,
@@ -25,74 +26,42 @@ export default function EditPersonPage() {
       }),
     });
 
-    alert("Изменения сохранены!");
+    setMessage(response.ok ? "Изменения сохранены" : "Не удалось сохранить изменения");
   }
 
   async function deletePerson() {
-    await fetch("/api/people/" + id, {
+    setMessage("");
+
+    const response = await fetch(`/api/people/${id}`, {
       method: "DELETE",
     });
 
-    alert("Человек удален!");
+    setMessage(response.ok ? "Человек удален" : "Не удалось удалить человека");
   }
 
   return (
-    <main className="min-h-screen bg-black text-white p-10">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-6xl font-black text-yellow-500 mb-10">
-          Редактирование
-        </h1>
+    <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
+      <div className="heritage-panel p-6">
+        <h1 className="font-serif text-3xl uppercase text-[#f8df9b]">Редактировать человека</h1>
 
-        <div className="flex flex-col gap-5">
-          <input
-            placeholder="ID человека"
-            value={id}
-            onChange={(e) => setId(e.target.value)}
-            className="bg-zinc-900 border border-zinc-700 p-4 rounded-2xl"
-          />
+        <div className="mt-6 grid gap-4">
+          <input className="heritage-input" placeholder="ID человека" value={id} onChange={(event) => setId(event.target.value)} />
+          <input className="heritage-input" placeholder="Имя" value={firstName} onChange={(event) => setFirstName(event.target.value)} />
+          <input className="heritage-input" placeholder="Фамилия" value={lastName} onChange={(event) => setLastName(event.target.value)} />
+          <textarea className="heritage-input min-h-32 py-4" placeholder="Биография" value={biography} onChange={(event) => setBiography(event.target.value)} />
+          <input className="heritage-input" placeholder="Ссылка на фото" value={photo} onChange={(event) => setPhoto(event.target.value)} />
+        </div>
 
-          <input
-            placeholder="Имя"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-            className="bg-zinc-900 border border-zinc-700 p-4 rounded-2xl"
-          />
-
-          <input
-            placeholder="Фамилия"
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-            className="bg-zinc-900 border border-zinc-700 p-4 rounded-2xl"
-          />
-
-          <input
-            placeholder="Фото"
-            value={photo}
-            onChange={(e) => setPhoto(e.target.value)}
-            className="bg-zinc-900 border border-zinc-700 p-4 rounded-2xl"
-          />
-
-          <textarea
-            placeholder="Биография"
-            value={biography}
-            onChange={(e) => setBiography(e.target.value)}
-            className="bg-zinc-900 border border-zinc-700 p-4 rounded-2xl h-40"
-          />
-
-          <button
-            onClick={updatePerson}
-            className="bg-yellow-500 text-black p-5 rounded-2xl text-xl font-bold"
-          >
-            Сохранить изменения
+        <div className="mt-6 flex flex-wrap gap-3">
+          <button className="heritage-action px-5" type="button" onClick={updatePerson}>
+            Сохранить
           </button>
-
-          <button
-            onClick={deletePerson}
-            className="bg-red-600 p-5 rounded-2xl text-xl font-bold"
-          >
-            Удалить человека
+          <button className="heritage-outline px-5" type="button" onClick={deletePerson}>
+            Удалить
           </button>
         </div>
+
+        {message && <p className="mt-5 text-white/72">{message}</p>}
       </div>
     </main>
   );
