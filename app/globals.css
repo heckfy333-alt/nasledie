@@ -1,17 +1,116 @@
-html,
-body {
-  padding: 0;
-  margin: 0;
-  background: #0b0b0f;
-  color: white;
-  font-family: Arial, sans-serif;
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+@import "reactflow/dist/style.css";
+
+:root {
+  --background: #050507;
+  --foreground: #f7f2e8;
+  --gold: #d6ad52;
+  --gold-soft: #f8df9b;
+  --graphite: #101115;
+  --glass: rgba(255, 255, 255, 0.075);
+  --line: rgba(248, 223, 155, 0.18);
 }
 
 * {
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(214, 173, 82, 0.15), transparent 32rem),
+    radial-gradient(circle at 86% 12%, rgba(93, 137, 255, 0.12), transparent 30rem),
+    linear-gradient(135deg, #030305 0%, #0b0c11 44%, #151111 100%);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
 a {
   color: inherit;
   text-decoration: none;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+.cosmic-grid {
+  background-image:
+    linear-gradient(rgba(248, 223, 155, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(248, 223, 155, 0.055) 1px, transparent 1px);
+  background-size: 72px 72px;
+}
+
+.glass {
+  border: 1px solid var(--line);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.045));
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(18px);
+}
+
+.gold-text {
+  background: linear-gradient(135deg, #fff4c7, #d6ad52 55%, #8f6b2b);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.premium-button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(248, 223, 155, 0.34);
+  background: linear-gradient(135deg, #f7d781, #b98833);
+  color: #11100c;
+  font-weight: 700;
+  transition: transform 180ms ease, filter 180ms ease;
+}
+
+.premium-button:hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
+.ghost-button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.055);
+  color: #f7f2e8;
+  font-weight: 700;
+  transition: background 180ms ease, transform 180ms ease;
+}
+
+.ghost-button:hover {
+  background: rgba(255, 255, 255, 0.09);
+  transform: translateY(-1px);
+}
+
+.leaflet-container {
+  background: #09090d;
+  color: #111;
+}
+
+.react-flow__node-default,
+.react-flow__node-input,
+.react-flow__node-output {
+  border: 0;
+  background: transparent;
+  padding: 0;
 }

@@ -1,8 +1,0 @@
--- CreateTable
-CREATE TABLE "MemoryPhoto" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    "imageUrl" TEXT NOT NULL,
-    "caption" TEXT,
-    "personId" INTEGER NOT NULL,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-);

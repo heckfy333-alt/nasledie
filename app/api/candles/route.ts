@@ -1,32 +1,24 @@
 import { NextResponse } from "next/server";
 
+import { apiError, currentUserId, readJson, toNumber } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
-  const candles =
-    await prisma.candle.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+export async function POST(request: Request) {
+  const body = await readJson<Record<string, unknown>>(request);
+  const personId = toNumber(body.personId);
 
-  return NextResponse.json(candles);
-}
+  if (!personId) {
+    return apiError("Укажите personId");
+  }
 
-export async function POST(
-  req: Request
-) {
-  const body = await req.json();
+  const candle = await prisma.candle.create({
+    data: {
+      personId,
+      userId: await currentUserId(),
+      author: typeof body.author === "string" && body.author.trim() ? body.author.trim() : "Родные",
+      message: typeof body.message === "string" ? body.message : null,
+    },
+  });
 
-  const candle =
-    await prisma.candle.create({
-      data: {
-        author: body.author,
-
-        personId:
-          body.personId,
-      },
-    });
-
-  return NextResponse.json(candle);
+  return NextResponse.json(candle, { status: 201 });
 }

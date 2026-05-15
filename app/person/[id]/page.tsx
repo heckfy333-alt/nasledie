@@ -1,429 +1,202 @@
-"use client";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import QRCode from "react-qr-code";
+import { Archive, CalendarDays, Flame, MapPinned, MessageCircle, Mic2 } from "lucide-react";
 
-import { useEffect, useState } from "react";
-import dynamic from "next/dynamic";
+import AppShell from "@/app/components/AppShell";
+import { prisma } from "@/lib/prisma";
 
-const Map = dynamic(
-  () => import("@/app/components/MemoryMap"),
-  {
-    ssr: false,
-  }
-);
+export const dynamic = "force-dynamic";
 
-export default function PersonPage(props: any) {
-  const params = props.params;
-
-  const [person, setPerson] = useState<any>(null);
-  const [candles, setCandles] = useState<any[]>([]);
-  const [events, setEvents] = useState<any[]>([]);
-
-  const [candleName, setCandleName] = useState("");
-
-  const [year, setYear] = useState("");
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-
-  useEffect(() => {
-    loadPerson();
-    loadCandles();
-    loadEvents();
-  }, []);
-
-  async function loadPerson() {
-    const res = await fetch("/api/persons");
-    const data = await res.json();
-
-    const found = data.find(
-      (p: any) => p.id === Number(params.id)
-    );
-
-    setPerson(found);
-  }
-
-  async function loadCandles() {
-    const res = await fetch("/api/candles");
-    const data = await res.json();
-
-    setCandles(data);
-  }
-
-  async function loadEvents() {
-    const res = await fetch("/api/events");
-    const data = await res.json();
-
-    const filtered = data.filter(
-      (e: any) => e.personId === Number(params.id)
-    );
-
-    setEvents(filtered);
-  }
-
-  async function addCandle() {
-    if (!candleName) return;
-
-    const res = await fetch("/api/candles", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-
-      body: JSON.stringify({
-        author: candleName,
-        personId: Number(params.id),
-      }),
-    });
-
-    const newCandle = await res.json();
-
-    setCandles([...candles, newCandle]);
-
-    setCandleName("");
-  }
-
-  async function addEvent() {
-    if (!year || !title) return;
-
-    const res = await fetch("/api/events", {
-      method: "POST",
-
-      headers: {
-        "Content-Type": "application/json",
-      },
-
-      body: JSON.stringify({
-        personId: Number(params.id),
-        year,
-        title,
-        description,
-      }),
-    });
-
-    const newEvent = await res.json();
-
-    setEvents([...events, newEvent]);
-
-    setYear("");
-    setTitle("");
-    setDescription("");
-  }
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const person = await prisma.person.findUnique({
+    where: { id: Number(id) },
+    select: { name: true, biography: true, bio: true },
+  });
 
   if (!person) {
-    return (
-      <div
-        style={{
-          minHeight: "100vh",
-          background: "#070b1a",
-          color: "white",
-          padding: "40px",
-        }}
-      >
-        Загрузка...
-      </div>
-    );
+    return { title: "Мемориал не найден" };
   }
 
+  return {
+    title: person.name,
+    description: person.biography || person.bio || `Страница памяти ${person.name} на платформе Наследие.`,
+  };
+}
+
+export default async function PersonPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const person = await prisma.person.findUnique({
+    where: { id: Number(id) },
+    include: {
+      events: { orderBy: [{ happenedAt: "asc" }, { createdAt: "asc" }] },
+      memories: { orderBy: { createdAt: "desc" } },
+      comments: { orderBy: { createdAt: "desc" } },
+      candles: { orderBy: { createdAt: "desc" } },
+      photos: { orderBy: { createdAt: "desc" } },
+      voiceMemories: { orderBy: { createdAt: "desc" } },
+      documents: { orderBy: { createdAt: "desc" } },
+    },
+  });
+
+  if (!person) {
+    notFound();
+  }
+
+  const qrUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/person/${person.id}`;
+
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background:
-          "radial-gradient(circle at center, #182848 0%, #090a0f 100%)",
-        padding: "40px",
-        color: "white",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          gap: "30px",
-          alignItems: "center",
-          marginBottom: "40px",
-        }}
-      >
-        <img
-          src={person.photo}
-          alt={person.name}
-          style={{
-            width: "220px",
-            height: "220px",
-            objectFit: "cover",
-            borderRadius: "30px",
-            border: "4px solid #ffe81f",
-            boxShadow:
-              "0 0 40px rgba(255,255,0,0.5)",
-          }}
-        />
-
-        <div>
-          <h1
+    <AppShell>
+      <main>
+        <section className="relative overflow-hidden">
+          <div
+            className="absolute inset-0 opacity-35"
             style={{
-              fontSize: "72px",
-              margin: 0,
-              color: "#ffe81f",
-              fontWeight: "900",
+              backgroundImage: `url(${person.photo || "https://images.unsplash.com/photo-1495567720989-cebdbdd97913?q=80&w=2200&auto=format&fit=crop"})`,
+              backgroundPosition: "center",
+              backgroundSize: "cover",
             }}
-          >
-            {person.name}
-          </h1>
-
-          <p
-            style={{
-              fontSize: "32px",
-              opacity: 0.9,
-              marginTop: "10px",
-            }}
-          >
-            {person.role}
-          </p>
-        </div>
-      </div>
-
-      <div
-        style={{
-          background: "rgba(255,255,255,0.05)",
-          borderRadius: "30px",
-          padding: "30px",
-          marginBottom: "40px",
-        }}
-      >
-        <h2
-          style={{
-            color: "#ffcc33",
-            fontSize: "48px",
-          }}
-        >
-          Карта памяти
-        </h2>
-
-        <Map />
-      </div>
-
-      <div
-        style={{
-          background: "rgba(255,255,255,0.05)",
-          borderRadius: "30px",
-          padding: "30px",
-          marginBottom: "40px",
-        }}
-      >
-        <h2
-          style={{
-            color: "#ffe81f",
-            fontSize: "48px",
-            marginBottom: "30px",
-          }}
-        >
-          Живая стена памяти
-        </h2>
-
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "20px",
-            marginBottom: "30px",
-          }}
-        >
-          {candles.map((candle: any) => (
-            <div
-              key={candle.id}
-              style={{
-                width: "140px",
-                borderRadius: "24px",
-                background:
-                  "rgba(255,255,255,0.06)",
-                padding: "20px",
-                textAlign: "center",
-              }}
-            >
-              <div style={{ fontSize: "42px" }}>
-                🕯
-              </div>
-
-              <div
-                style={{
-                  marginTop: "10px",
-                  color: "#ffcc33",
-                  fontWeight: "700",
-                }}
-              >
-                {candle.author}
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/62 via-black/74 to-[#050507]" />
+          <div className="relative mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[1fr_340px] lg:px-8">
+            <div className="flex min-h-[440px] flex-col justify-end">
+              <p className="text-sm uppercase text-yellow-100/62">{person.role || "Страница памяти"}</p>
+              <h1 className="mt-3 max-w-4xl text-5xl font-black leading-tight sm:text-7xl">{person.name}</h1>
+              <p className="mt-5 max-w-3xl text-lg leading-8 text-white/72">
+                {person.biography || person.bio || "Семья ещё собирает историю жизни этого человека."}
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3 text-sm text-white/62">
+                <span className="rounded-full border border-white/12 bg-white/7 px-4 py-2">
+                  {person.birthPlace || "Место рождения не указано"}
+                </span>
+                <span className="rounded-full border border-white/12 bg-white/7 px-4 py-2">
+                  {person.events.length} событий
+                </span>
+                <span className="rounded-full border border-white/12 bg-white/7 px-4 py-2">
+                  {person.candles.length} свечей
+                </span>
               </div>
             </div>
-          ))}
-        </div>
 
-        <div
-          style={{
-            display: "flex",
-            gap: "20px",
-          }}
-        >
-          <input
-            value={candleName}
-            onChange={(e) =>
-              setCandleName(e.target.value)
-            }
-            placeholder="Ваше имя"
-            style={{
-              flex: 1,
-              height: "70px",
-              borderRadius: "20px",
-              border: "none",
-              padding: "0 25px",
-              fontSize: "22px",
-            }}
-          />
-
-          <button
-            onClick={addCandle}
-            style={{
-              width: "240px",
-              borderRadius: "20px",
-              border: "none",
-              background: "#ffe81f",
-              fontWeight: "900",
-              fontSize: "22px",
-            }}
-          >
-            Зажечь свечу
-          </button>
-        </div>
-      </div>
-
-      <div
-        style={{
-          background: "rgba(255,255,255,0.05)",
-          borderRadius: "30px",
-          padding: "30px",
-        }}
-      >
-        <h2
-          style={{
-            color: "#ffcc33",
-            fontSize: "48px",
-            marginBottom: "30px",
-          }}
-        >
-          История человека
-        </h2>
-
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "20px",
-            marginBottom: "40px",
-          }}
-        >
-          <input
-            value={year}
-            onChange={(e) =>
-              setYear(e.target.value)
-            }
-            placeholder="Год"
-            style={{
-              height: "60px",
-              borderRadius: "20px",
-              border: "none",
-              padding: "0 20px",
-              fontSize: "20px",
-            }}
-          />
-
-          <input
-            value={title}
-            onChange={(e) =>
-              setTitle(e.target.value)
-            }
-            placeholder="Название события"
-            style={{
-              height: "60px",
-              borderRadius: "20px",
-              border: "none",
-              padding: "0 20px",
-              fontSize: "20px",
-            }}
-          />
-
-          <textarea
-            value={description}
-            onChange={(e) =>
-              setDescription(e.target.value)
-            }
-            placeholder="Описание события"
-            style={{
-              height: "120px",
-              borderRadius: "20px",
-              border: "none",
-              padding: "20px",
-              fontSize: "20px",
-            }}
-          />
-
-          <button
-            onClick={addEvent}
-            style={{
-              height: "70px",
-              borderRadius: "20px",
-              border: "none",
-              background: "#ffe81f",
-              fontWeight: "900",
-              fontSize: "22px",
-              cursor: "pointer",
-            }}
-          >
-            Добавить событие
-          </button>
-        </div>
-
-        <div
-          style={{
-            borderLeft: "4px solid #ffe81f",
-            paddingLeft: "30px",
-          }}
-        >
-          {events.map((event: any) => (
-            <div
-              key={event.id}
-              style={{
-                marginBottom: "40px",
-              }}
-            >
-              <div
-                style={{
-                  color: "#ffe81f",
-                  fontSize: "28px",
-                  fontWeight: "900",
-                }}
-              >
-                {event.year}
+            <aside className="glass h-fit rounded-xl p-5">
+              <div className="rounded-lg bg-white p-4">
+                <QRCode value={qrUrl} className="h-full w-full" />
               </div>
+              <p className="mt-4 text-sm leading-6 text-white/60">
+                QR-мемориал можно разместить в семейной книге, на памятном месте или в архивной папке.
+              </p>
+              <Link href={`/api/person/${person.id}`} className="ghost-button mt-4 w-full px-4">
+                API карточки
+              </Link>
+            </aside>
+          </div>
+        </section>
 
-              <div
-                style={{
-                  marginTop: "10px",
-                  fontSize: "26px",
-                  fontWeight: "700",
-                }}
-              >
-                {event.title}
+        <section className="mx-auto grid max-w-7xl gap-5 px-4 pb-20 sm:px-6 lg:grid-cols-[1.2fr_0.8fr] lg:px-8">
+          <div className="space-y-5">
+            <Panel icon={CalendarDays} title="События жизни">
+              <div className="space-y-3">
+                {person.events.map((event) => (
+                  <div key={event.id} className="rounded-lg border border-white/10 bg-white/5 p-4">
+                    <p className="text-sm text-yellow-100/65">{event.year || event.happenedAt?.getFullYear() || "Дата уточняется"}</p>
+                    <h3 className="mt-1 text-xl font-bold">{event.title}</h3>
+                    <p className="mt-2 leading-7 text-white/62">{event.description}</p>
+                  </div>
+                ))}
+                {person.events.length === 0 && <Empty text="События пока не добавлены." />}
               </div>
+            </Panel>
 
-              <div
-                style={{
-                  marginTop: "10px",
-                  fontSize: "20px",
-                  color: "#ccc",
-                  lineHeight: "32px",
-                }}
-              >
-                {event.description}
+            <Panel icon={Archive} title="Фото и документы">
+              <div className="grid gap-3 sm:grid-cols-2">
+                {person.photos.map((photo) => (
+                  <div key={photo.id} className="rounded-lg border border-white/10 bg-white/5 p-3">
+                    <img src={photo.imageUrl} alt={photo.title || person.name} className="h-52 w-full rounded-md object-cover" />
+                    <p className="mt-3 text-sm text-white/58">{photo.title || "Семейная фотография"}</p>
+                  </div>
+                ))}
+                {person.documents.map((document) => (
+                  <a key={document.id} href={document.fileUrl} className="rounded-lg border border-white/10 bg-white/5 p-4">
+                    <p className="font-bold text-yellow-100">{document.title}</p>
+                    <p className="mt-2 text-sm text-white/52">{document.fileType || "Документ архива"}</p>
+                  </a>
+                ))}
               </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+              {person.photos.length + person.documents.length === 0 && <Empty text="Архив пока пуст." />}
+            </Panel>
+          </div>
+
+          <div className="space-y-5">
+            <Panel icon={Flame} title="Свечи памяти">
+              <div className="space-y-3">
+                {person.candles.slice(0, 8).map((candle) => (
+                  <div key={candle.id} className="rounded-lg border border-yellow-100/15 bg-yellow-100/8 p-4">
+                    <p className="font-bold">{candle.author}</p>
+                    <p className="mt-1 text-sm leading-6 text-white/58">{candle.message || "Зажёг свечу памяти."}</p>
+                  </div>
+                ))}
+                {person.candles.length === 0 && <Empty text="Станьте первым, кто зажжёт свечу." />}
+              </div>
+            </Panel>
+
+            <Panel icon={Mic2} title="Голосовые воспоминания">
+              <div className="space-y-3">
+                {person.voiceMemories.map((voice) => (
+                  <div key={voice.id} className="rounded-lg border border-white/10 bg-white/5 p-4">
+                    <p className="font-bold">{voice.title}</p>
+                    <audio src={voice.audioUrl} controls className="mt-3 w-full" />
+                  </div>
+                ))}
+                {person.voiceMemories.length === 0 && <Empty text="Голосовые истории пока не записаны." />}
+              </div>
+            </Panel>
+
+            <Panel icon={MessageCircle} title="Комментарии семьи">
+              <div className="space-y-3">
+                {person.comments.slice(0, 6).map((comment) => (
+                  <div key={comment.id} className="rounded-lg border border-white/10 bg-white/5 p-4">
+                    <p className="font-bold">{comment.author}</p>
+                    <p className="mt-1 text-sm leading-6 text-white/62">{comment.text}</p>
+                  </div>
+                ))}
+                {person.comments.length === 0 && <Empty text="Комментариев пока нет." />}
+              </div>
+            </Panel>
+
+            <Panel icon={MapPinned} title="Места памяти">
+              <p className="leading-7 text-white/62">
+                {person.birthPlace || "Место рождения не указано"}
+                {person.deathPlace ? ` - ${person.deathPlace}` : ""}
+              </p>
+            </Panel>
+          </div>
+        </section>
+      </main>
+    </AppShell>
   );
+}
+
+function Panel({
+  icon: Icon,
+  title,
+  children,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="glass rounded-xl p-5">
+      <div className="mb-5 flex items-center gap-3">
+        <Icon className="h-5 w-5 text-yellow-200" />
+        <h2 className="text-xl font-bold">{title}</h2>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function Empty({ text }: { text: string }) {
+  return <p className="rounded-lg border border-white/10 bg-white/5 p-4 text-sm text-white/48">{text}</p>;
 }

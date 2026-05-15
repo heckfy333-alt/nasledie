@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
 export async function POST(
   req: Request
@@ -26,7 +27,7 @@ export async function POST(
         email: body.email,
 
         password:
-          body.password,
+          await bcrypt.hash(body.password, 10),
 
         name: body.name,
       },

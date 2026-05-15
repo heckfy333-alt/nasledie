@@ -1,100 +1,72 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 export default function RegisterPage() {
-  const [name, setName] =
-    useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const [email, setEmail] =
-    useState("");
+  async function register() {
+    setMessage("");
+    setIsLoading(true);
 
-  const [password, setPassword] =
-    useState("");
+    const response = await fetch("/api/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name,
+        email,
+        password,
+      }),
+    });
 
-  const [message, setMessage] =
-    useState("");
+    const data = await response.json();
+    setIsLoading(false);
 
-  const register =
-    async () => {
-      const res = await fetch(
-        "/api/register",
-        {
-          method: "POST",
+    if (data.error) {
+      setMessage(data.error);
+      return;
+    }
 
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-
-          body: JSON.stringify({
-            name,
-            email,
-            password,
-          }),
-        }
-      );
-
-      const data =
-        await res.json();
-
-      if (data.error) {
-        setMessage(data.error);
-
-        return;
-      }
-
-      setMessage(
-        "Аккаунт создан 🔥"
-      );
-
-      setName("");
-      setEmail("");
-      setPassword("");
-    };
+    setMessage("Аккаунт создан. Сейчас откроется вход.");
+    window.setTimeout(() => {
+      window.location.href = "/login";
+    }, 700);
+  }
 
   return (
     <div
       style={{
         minHeight: "100vh",
-
         display: "flex",
-
-        justifyContent:
-          "center",
-
+        justifyContent: "center",
         alignItems: "center",
-
-        background:
-          "radial-gradient(circle at center, #0f172a 0%, #020617 100%)",
+        background: "radial-gradient(circle at center, #0f172a 0%, #020617 100%)",
+        padding: 20,
       }}
     >
       <div
         style={{
-          width: 450,
-
-          background:
-            "linear-gradient(to bottom, #111827, #030712)",
-
-          border:
-            "2px solid #facc15",
-
-          borderRadius: 35,
-
+          width: "100%",
+          maxWidth: 450,
+          background: "linear-gradient(to bottom, #111827, #030712)",
+          border: "2px solid #facc15",
+          borderRadius: 28,
           padding: 40,
-
-          boxShadow:
-            "0 0 40px rgba(250,204,21,0.25)",
+          boxShadow: "0 0 40px rgba(250,204,21,0.25)",
         }}
       >
         <h1
           style={{
             color: "white",
-
-            fontSize: 48,
-
-            marginBottom: 30,
-
+            fontSize: 42,
+            marginBottom: 28,
             textAlign: "center",
           }}
         >
@@ -103,122 +75,64 @@ export default function RegisterPage() {
 
         <input
           placeholder="Имя"
-
           value={name}
-
-          onChange={(e) =>
-            setName(
-              e.target.value
-            )
-          }
-
-          style={{
-            width: "100%",
-
-            padding: 16,
-
-            marginBottom: 15,
-
-            borderRadius: 12,
-
-            border: "none",
-
-            fontSize: 18,
-          }}
+          onChange={(event) => setName(event.target.value)}
+          style={inputStyle}
         />
 
         <input
           placeholder="Email"
-
           value={email}
-
-          onChange={(e) =>
-            setEmail(
-              e.target.value
-            )
-          }
-
-          style={{
-            width: "100%",
-
-            padding: 16,
-
-            marginBottom: 15,
-
-            borderRadius: 12,
-
-            border: "none",
-
-            fontSize: 18,
-          }}
+          onChange={(event) => setEmail(event.target.value)}
+          style={inputStyle}
         />
 
         <input
           type="password"
-
           placeholder="Пароль"
-
           value={password}
-
-          onChange={(e) =>
-            setPassword(
-              e.target.value
-            )
-          }
-
-          style={{
-            width: "100%",
-
-            padding: 16,
-
-            marginBottom: 25,
-
-            borderRadius: 12,
-
-            border: "none",
-
-            fontSize: 18,
-          }}
+          onChange={(event) => setPassword(event.target.value)}
+          style={inputStyle}
         />
 
         <button
           onClick={register}
-
+          disabled={isLoading}
           style={{
             width: "100%",
-
             padding: 18,
-
-            background:
-              "#facc15",
-
+            background: "#facc15",
             color: "#000",
-
             border: "none",
-
             borderRadius: 14,
-
-            fontWeight:
-              "bold",
-
+            fontWeight: "bold",
             fontSize: 18,
-
-            cursor:
-              "pointer",
+            cursor: isLoading ? "default" : "pointer",
+            opacity: isLoading ? 0.7 : 1,
           }}
         >
-          Создать аккаунт
+          {isLoading ? "Создаем..." : "Создать аккаунт"}
         </button>
+
+        <Link
+          href="/login"
+          style={{
+            display: "block",
+            marginTop: 16,
+            color: "#facc15",
+            textAlign: "center",
+            textDecoration: "none",
+          }}
+        >
+          Уже есть аккаунт? Войти
+        </Link>
 
         {message && (
           <div
             style={{
               color: "white",
-
               marginTop: 20,
-
-              textAlign:
-                "center",
+              textAlign: "center",
             }}
           >
             {message}
@@ -228,3 +142,12 @@ export default function RegisterPage() {
     </div>
   );
 }
+
+const inputStyle = {
+  width: "100%",
+  padding: 16,
+  marginBottom: 15,
+  borderRadius: 12,
+  border: "none",
+  fontSize: 18,
+};
